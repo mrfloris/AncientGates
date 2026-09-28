@@ -3,7 +3,7 @@ name: Bug report
 about: Create a bug report to help improve the plugin
 title: ''
 labels: bug
-assignees: NoChanceSD
+assignees: ''
 
 ---
 

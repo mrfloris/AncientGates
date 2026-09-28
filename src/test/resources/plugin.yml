@@ -1,0 +1,5 @@
+name: AncientGatesSmoke
+version: '1.0'
+main: org.mcteam.ancientgates.smoke.PaperSmokePlugin
+api-version: '26.3'
+depend: [AncientGates]

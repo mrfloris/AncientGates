@@ -2,7 +2,6 @@ package org.mcteam.ancientgates.commands.base;
 
 import java.util.List;
 
-import com.cryptomorin.xseries.XBlock;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -36,9 +35,9 @@ public class CommandAddFrom extends BaseCommand {
 		final Block playerBlock = player.getLocation().getBlock();
 		final Block upBlock = playerBlock.getRelative(BlockFace.UP);
 
-		if (XBlock.isAir(playerBlock.getType())) {
+		if (playerBlock.getType().isAir()) {
 			gate.addFrom(playerBlock.getLocation());
-		} else if (XBlock.isAir(upBlock.getType())) {
+		} else if (upBlock.getType().isAir()) {
 			gate.addFrom(upBlock.getLocation());
 		} else {
 			sendMessage("There is not enough room for a gate to open here");

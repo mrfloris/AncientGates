@@ -70,12 +70,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import me.chancesd.sdutils.scheduler.ScheduleUtils;
-import me.chancesd.sdutils.updater.BukkitUpdater;
-import me.chancesd.sdutils.updater.SpigotUpdater;
-import me.chancesd.sdutils.updater.Updater;
-import me.chancesd.sdutils.updater.Updater.UpdateResult;
-import me.chancesd.sdutils.updater.Updater.UpdateType;
-import me.chancesd.sdutils.utils.Log;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
 import net.milkbowl.vault.permission.Permission;
@@ -133,6 +127,7 @@ public class Plugin extends JavaPlugin {
 			serv = null;
 		}
 
+		ScheduleUtils.cancelAllTasks();
 		log("Disabled");
 	}
 
@@ -158,22 +153,9 @@ public class Plugin extends JavaPlugin {
 		// Load config from disc
 		Conf.load();
 
-		// Check for updates
-		if (Conf.updateCheck) {
-			Log.setup(this);
-			ScheduleUtils.runPlatformAsyncTimer(() -> {
-				Updater updater = new BukkitUpdater(Plugin.this, 51406, UpdateType.VERSION_CHECK, "ancient-gates").check();
-				if (updater.getResult() != UpdateResult.UPDATE_AVAILABLE) {
-					updater = new SpigotUpdater(Plugin.this, 6583, UpdateType.VERSION_CHECK).check();
-				}
-				if (updater.getResult() == UpdateResult.UPDATE_AVAILABLE) {
-					Bukkit.broadcast("§e[§7AncientGates§e] §aUpdate available: §c" + updater.getLatestName(), "ancientgates.setconf");
-					if (Conf.autoUpdate) {
-						downloadUpdate(updater);
-					}
-					Bukkit.broadcast("§e[§7AncientGates§e] §aLink: §6" + updater.getUpdateLink(), "ancientgates.setconf");
-				}
-			}, 0, 360000);
+		// Upstream downloads target older servers and must not replace this compatibility build.
+		if (Conf.updateCheck || Conf.autoUpdate) {
+			log("Upstream updates are disabled in this Paper 26.3 compatibility build. Update manually.");
 		}
 
 		// Register events
@@ -198,16 +180,6 @@ public class Plugin extends JavaPlugin {
 
 		log("Enabled (" + (System.currentTimeMillis() - start) + " ms)");
 	}
-
-	private void downloadUpdate(final Updater updater) {
-		if (updater.downloadFile()) {
-			Bukkit.broadcast("§e[§7AncientGates§e] §aUpdate downloaded to update folder, it will be applied automatically on the next restart",
-					"pvpmanager.admin");
-			return;
-		}
-		Log.info("Could not download latest update. Please update manually from one of the links below.");
-	}
-
 	// -------------------------------------------- //
 	// Auto-reload config
 	// -------------------------------------------- //

@@ -186,6 +186,12 @@ public class PluginMessage {
 				}
 			}
 
+			// The legacy receiving protocol reads a signed short. Component-rich item
+			// payloads can exceed it; abort before callers remove the source entity.
+			if (msg.length() > Short.MAX_VALUE) {
+				throw new IllegalArgumentException("AncientGates Bungee payload exceeds 32767 bytes; transfer cancelled.");
+			}
+
 			// Build the message data, sent over the <channel> BungeeCord channel
 			final ByteArrayOutputStream b = new ByteArrayOutputStream();
 			final DataOutputStream out = new DataOutputStream(b);

@@ -23,6 +23,7 @@ import org.bukkit.entity.minecart.HopperMinecart;
 import org.bukkit.entity.minecart.StorageMinecart;
 import org.bukkit.event.entity.EntityPortalEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.util.Vector;
 import org.mcteam.ancientgates.Conf;
 import org.mcteam.ancientgates.Plugin;
@@ -283,82 +284,44 @@ public class TeleportUtil {
 		}
 	}
 
-	// Normal vehicle teleport
+	// Normal vehicle teleport. Paper 26.3 moves the existing vehicle and its passengers.
 	public static void teleportVehicle(final Vehicle vehicle, final Location location, final Boolean teleportEntities,
 			final InvBoolean teleportInventory) {
-		final Location destination = GeometryUtil.addHeightToLocation(location.clone(), 0.5); // Fix vehicle spawn glitch
-		final double velocity = vehicle.getVelocity().length();
-		checkChunkLoad(destination.getBlock());
+		if (location == null || location.getWorld() == null || !vehicle.isValid())
+			return;
+		final Location origin = vehicle.getLocation();
+		final Location destination = GeometryUtil.addHeightToLocation(location.clone(), 0.5);
+		final double speed = vehicle.getVelocity().length();
+		final List<Entity> passengers = vehicle.getPassengers();
+		if (!teleportEntities && passengers.stream().anyMatch(passenger -> !(passenger instanceof Player)))
+			return;
+		if (!vehicle.teleport(destination))
+			return;
 
-		// Stop and teleport
-		vehicle.setVelocity(new Vector());
-
-		// Get new velocity
-		final Vector newVelocity = destination.getDirection();
-		newVelocity.multiply(velocity);
-
-		final Entity passenger = vehicle.getPassenger();
-		if (passenger != null) {
-			// Handle player inventory
-			if (passenger instanceof Player) {
-				if (!teleportInventory.equals(InvBoolean.TRUE)) {
-					final ItemStack[] contents = ((Player) passenger).getInventory().getContents();
-					((Player) passenger).getInventory().clear();
-
-					if (teleportInventory.equals(InvBoolean.FALSE)) {
-						for (final ItemStack itemStack : contents) {
-							if (itemStack != null) {
-								passenger.getWorld().dropItemNaturally(((Player) passenger).getLocation(), itemStack);
-							}
-						}
-					}
-				}
+		// Only change inventories after the teleport succeeds. Keep the original entities,
+		// UUIDs, inventories, PDC and components instead of spawning replacement vehicles.
+		for (final Entity passenger : passengers) {
+			passenger.setFireTicks(0);
+			if (passenger instanceof Player player && teleportInventory != InvBoolean.TRUE) {
+				final ItemStack[] contents = player.getInventory().getContents();
+				player.getInventory().clear();
+				if (teleportInventory == InvBoolean.FALSE)
+					dropContents(origin, contents);
 			}
-			final Vehicle v = destination.getWorld().spawn(destination, vehicle.getClass());
-			vehicle.eject();
-			vehicle.remove();
-			ScheduleUtils.runPlatformTask(() -> {
-				passenger.teleport(destination);
-				passenger.setFireTicks(0); // Cancel lava fire
-			}, passenger);
-			ScheduleUtils.runPlatformTaskLater(() -> {
-				v.setPassenger(passenger);
-				v.setVelocity(newVelocity);
-			}, v, 2);
-		} else {
-			ItemStack[] contents;
-			final Vehicle mc = destination.getWorld().spawn(destination, vehicle.getClass());
-			if (mc instanceof StorageMinecart) {
-				contents = ((StorageMinecart) vehicle).getInventory().getContents();
-				// Teleport contents
-				if (teleportEntities) {
-					final StorageMinecart smc = (StorageMinecart) mc;
-					smc.getInventory().setContents(contents);
-					// Drop contents
-				} else {
-					for (final ItemStack itemStack : contents) {
-						if (itemStack != null) {
-							vehicle.getWorld().dropItemNaturally(vehicle.getLocation(), itemStack);
-						}
-					}
-				}
-			} else if (mc instanceof HopperMinecart) {
-				contents = ((HopperMinecart) vehicle).getInventory().getContents();
-				// Teleport contents
-				if (teleportEntities) {
-					final HopperMinecart hmc = (HopperMinecart) mc;
-					hmc.getInventory().setContents(contents);
-					// Drop contents
-				} else {
-					for (final ItemStack itemStack : contents) {
-						if (itemStack != null) {
-							vehicle.getWorld().dropItemNaturally(vehicle.getLocation(), itemStack);
-						}
-					}
-				}
-			}
-			mc.setVelocity(newVelocity);
-			vehicle.remove();
+		}
+		if (!teleportEntities && vehicle instanceof InventoryHolder holder) {
+			final ItemStack[] contents = holder.getInventory().getContents();
+			holder.getInventory().clear();
+			dropContents(origin, contents);
+		}
+		vehicle.setFireTicks(0);
+		vehicle.setVelocity(destination.getDirection().multiply(speed));
+	}
+
+	private static void dropContents(final Location origin, final ItemStack[] contents) {
+		for (final ItemStack item : contents) {
+			if (item != null && !item.isEmpty())
+				origin.getWorld().dropItemNaturally(origin, item);
 		}
 	}
 

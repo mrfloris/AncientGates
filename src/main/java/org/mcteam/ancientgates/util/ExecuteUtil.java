@@ -71,12 +71,9 @@ public class ExecuteUtil {
 			position.setYaw(yaw);
 			position.add(position.getDirection().multiply(2));
 
-			final Vehicle v = position.getWorld().spawn(position, vehicle.getClass());
-			vehicle.eject();
-			vehicle.remove();
-			passenger.teleport(position);
+			if (!vehicle.teleport(position))
+				return;
 			passenger.setFireTicks(0); // Cancel lava fire
-			ScheduleUtils.runPlatformTaskLater(() -> v.setPassenger(passenger), v, 2);
 		}
 
 		// Execute command as player or console

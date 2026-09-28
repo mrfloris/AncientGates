@@ -6,34 +6,31 @@ import java.util.Map;
 
 import org.bukkit.Material;
 
-import com.cryptomorin.xseries.XMaterial;
-import com.cryptomorin.xseries.reflection.XReflection;
-
 public enum GateMaterial {
 	// AIR
-	AIR("pseudo air blocks", XMaterial.MOVING_PISTON.parseMaterial()),
+	AIR("pseudo air blocks", Material.MOVING_PISTON),
 
 	// END GATEWAY
 	ENDGATEWAY("end gateway blocks",
-			XMaterial.END_GATEWAY.parseMaterial() != null ? XMaterial.END_GATEWAY.parseMaterial() : XMaterial.END_PORTAL.parseMaterial()),
+			Material.END_GATEWAY),
 
 	// ENDER PORTAL
-	ENDPORTAL("ender portal blocks", XMaterial.END_PORTAL.parseMaterial()),
+	ENDPORTAL("ender portal blocks", Material.END_PORTAL),
 
 	// LAVA
-	LAVA("stationary lava blocks", XReflection.supports(13) ? Material.LAVA : Material.getMaterial("STATIONARY_LAVA")),
+	LAVA("stationary lava blocks", Material.LAVA),
 
 	// NETHER
-	PORTAL("nether blocks", XMaterial.NETHER_PORTAL.parseMaterial()),
+	PORTAL("nether blocks", Material.NETHER_PORTAL),
 
 	// SUGARCANE
-	SUGARCANE("sugarcane blocks", XMaterial.SUGAR_CANE.parseMaterial()),
+	SUGARCANE("sugarcane blocks", Material.SUGAR_CANE),
 
 	// WATER
-	WATER("stationary water blocks", XReflection.supports(13) ? Material.WATER : Material.getMaterial("STATIONARY_WATER")),
+	WATER("stationary water blocks", Material.WATER),
 
 	// WEB
-	WEB("spiders web blocks", XMaterial.COBWEB.parseMaterial());
+	WEB("spiders web blocks", Material.COBWEB);
 
 	private static final Map<String, GateMaterial> nameToMaterial = new HashMap<>();
 

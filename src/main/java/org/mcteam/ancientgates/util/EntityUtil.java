@@ -2,9 +2,11 @@ package org.mcteam.ancientgates.util;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Locale;
 
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
+import org.bukkit.Registry;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Animals;
 import org.bukkit.entity.Creeper;
@@ -24,10 +26,6 @@ import org.bukkit.entity.Villager;
 import org.bukkit.entity.Wolf;
 import org.bukkit.inventory.ItemStack;
 import org.mcteam.ancientgates.Plugin;
-
-import com.cryptomorin.xseries.XMaterial;
-
-import me.chancesd.sdutils.utils.MCVersion;
 
 public class EntityUtil {
 
@@ -87,8 +85,10 @@ public class EntityUtil {
 
 	static {
 		villagerProfessions = new HashMap<>();
-		for (final Villager.Profession e : Villager.Profession.values()) {
-			villagerProfessions.put(e.name(), e);
+		for (final Villager.Profession e : Registry.VILLAGER_PROFESSION) {
+			final org.bukkit.NamespacedKey key = Registry.VILLAGER_PROFESSION.getKeyOrThrow(e);
+			villagerProfessions.put(key.toString(), e);
+			villagerProfessions.put(key.getKey().toUpperCase(Locale.ROOT), e);
 		}
 	}
 
@@ -118,7 +118,7 @@ public class EntityUtil {
 						data += String.valueOf(((Wolf) entity).getCollarColor()) + ",";
 					}
 				} else if (entity instanceof Ocelot) {
-					if (((Tameable) entity).isTamed()) {
+					if (entity instanceof Tameable tameable && tameable.isTamed()) {
 						data += ((Tameable) entity).getOwner().getName() + ",";
 						data += String.valueOf(((Ocelot) entity).getCatType().name()) + ",";
 					}
@@ -135,20 +135,17 @@ public class EntityUtil {
 						data += (((Tameable) entity).getOwner() != null ? ((Tameable) entity).getOwner().getName() : null) + ",";
 						data += ItemStackUtil.itemStackToString(((Horse) entity).getInventory().getSaddle()) + ",";
 						data += ItemStackUtil.itemStackToString(((Horse) entity).getInventory().getArmor()) + ",";
-						if (((Horse) entity).isCarryingChest()) {
-							data += ItemStackUtil.itemStackToString(((Horse) entity).getInventory().getContents()) + ",";
-						}
 					}
 				}
 			} else if (entity instanceof Villager) {
-				data += String.valueOf(((Villager) entity).getProfession().name()) + ",";
+				data += String.valueOf(Registry.VILLAGER_PROFESSION.getKeyOrThrow(((Villager) entity).getProfession())) + ",";
 				data += String.valueOf(((Villager) entity).getAge()) + ",";
 			} else if (entity instanceof Creeper) {
 				data += String.valueOf(((Creeper) entity).isPowered()) + ",";
 			} else if (entity instanceof Slime) {
 				data += String.valueOf(((Slime) entity).getSize()) + ",";
 			} else if (entity instanceof Skeleton) {
-				data += String.valueOf(((Skeleton) entity).getSkeletonType().name()) + ",";
+				data += "NORMAL" + ",";
 			}
 		}
 
@@ -156,7 +153,7 @@ public class EntityUtil {
 	}
 
 	public static void setEntityTypeData(final Entity entity, final String data) {
-		if (data == "")
+		if (data == null || data.isEmpty())
 			return;
 
 		final String parts[] = data.split(",");
@@ -179,7 +176,7 @@ public class EntityUtil {
 						((Tameable) entity).setOwner(getPlayer(parts[5]));
 						((Wolf) entity).setCollarColor(DyeColor.valueOf(parts[6]));
 					}
-				} else if (entity instanceof Ocelot) {
+				} else if (entity instanceof Ocelot && entity instanceof Tameable) {
 					if (parts.length > 4) {
 						((Tameable) entity).setTamed(true);
 						((Tameable) entity).setOwner(getPlayer(parts[4]));
@@ -201,10 +198,6 @@ public class EntityUtil {
 						}
 						((Horse) entity).getInventory().setSaddle(ItemStackUtil.stringToItemStack(parts[11])[0]);
 						((Horse) entity).getInventory().setArmor(ItemStackUtil.stringToItemStack(parts[12])[0]);
-						if (parts.length > 13) {
-							((Horse) entity).setCarryingChest(true);
-							((Horse) entity).getInventory().setContents(ItemStackUtil.stringToItemStack(parts[13]));
-						}
 					}
 				}
 			} else if (entity instanceof Villager) {
@@ -215,14 +208,14 @@ public class EntityUtil {
 			} else if (entity instanceof Slime) {
 				((Slime) entity).setSize(Integer.parseInt(parts[3]));
 			} else if (entity instanceof Skeleton) {
-				((Skeleton) entity).setSkeletonType(skeletonTypes.get(parts[3]));
+				// The entity type already selects the skeleton variant on modern Paper.
 				if (parts[3].equals("0")) {
 					((Skeleton) entity).getEquipment().setItemInHand(new ItemStack(Material.BOW));
 				} else {
 					((Skeleton) entity).getEquipment().setItemInHand(new ItemStack(Material.BOW));
 				}
 			} else if (entity instanceof PigZombie) {
-				((LivingEntity) entity).getEquipment().setItemInHand(new ItemStack(XMaterial.GOLDEN_SWORD.parseMaterial()));
+				((LivingEntity) entity).getEquipment().setItemInHand(new ItemStack(Material.GOLDEN_SWORD));
 			}
 		}
 	}
@@ -232,21 +225,17 @@ public class EntityUtil {
 	}
 
 	public static boolean isDroppedItem(final EntityType type) {
-		if (MCVersion.isAtLeast(MCVersion.V1_20_5)) {
-			return type == EntityType.ITEM;
-		} else {
-			return type == EntityType.valueOf("DROPPED_ITEM");
-		}
+		return type == EntityType.ITEM;
 	}
 
 	@SuppressWarnings("deprecation")
 	public static OfflinePlayer getPlayer(final String name) {
 		OfflinePlayer player;
-		if (Plugin.instance.getServer().getPlayer(name) != null) {
-			player = Plugin.instance.getServer().getPlayer(name);
+		if (Plugin.instance.getServer().getPlayerExact(name) != null) {
+			player = Plugin.instance.getServer().getPlayerExact(name);
 		} else {
-			player = Plugin.instance.getServer().getOfflinePlayer(name);
-			if (!player.hasPlayedBefore())
+			player = Plugin.instance.getServer().getOfflinePlayerIfCached(name);
+			if (player == null || !player.hasPlayedBefore())
 				return null;
 		}
 		return player;

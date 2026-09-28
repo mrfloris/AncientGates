@@ -6,15 +6,12 @@ import java.util.Map;
 import org.bukkit.Axis;
 import org.bukkit.Material;
 import org.bukkit.block.Biome;
-import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Orientable;
 import org.mcteam.ancientgates.util.BlockUtil;
 import org.mcteam.ancientgates.util.types.FloodOrientation;
 import org.mcteam.ancientgates.util.types.GateMaterial;
 import org.mcteam.ancientgates.util.types.WorldCoord;
-
-import com.cryptomorin.xseries.reflection.XReflection;
 
 public class Gates {
 
@@ -127,15 +124,9 @@ public class Gates {
 				coord.getBlock().setBiome(Biome.FOREST);
 			}
 			if (orientation == FloodOrientation.VERTICAL1 && material == GateMaterial.PORTAL) {
-				if (XReflection.supports(13)) {
-					final BlockData orientable = coord.getBlock().getBlockData();
-					((Orientable) orientable).setAxis(Axis.Z);
-					coord.getBlock().setBlockData(orientable);
-				} else {
-					final BlockState state = coord.getBlock().getState();
-					state.setRawData((byte) 2);
-					state.update();
-				}
+				final BlockData orientable = coord.getBlock().getBlockData();
+				((Orientable) orientable).setAxis(Axis.Z);
+				coord.getBlock().setBlockData(orientable, false);
 			}
 		}
 
@@ -147,7 +138,8 @@ public class Gates {
 			return;
 
 		for (final WorldCoord coord : gate.getPortalBlocks().keySet()) {
-			coord.getBlock().breakNaturally(); // Break naturally - Fix portal orientation
+			// Explicit removal also clears fluids and avoids dropping portal materials.
+			coord.getBlock().setType(Material.AIR, false);
 		}
 
 		for (final WorldCoord coord : gate.getPortalBlocks().keySet()) {

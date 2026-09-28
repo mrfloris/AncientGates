@@ -17,7 +17,7 @@ buildNumber.properties
 .mtj.tmp/
 
 # Package Files #
-#*.jar
+*.jar
 *.war
 *.ear
 
@@ -118,3 +118,57 @@ local.properties
 
 # STS (Spring Tool Suite)
 .springBeans
+
+# Disposable local compatibility servers and logs
+.scratch/
+
+# Local tooling and operating-system files
+.DS_Store
+._*
+.vscode/
+__pycache__/
+*.py[cod]
+/.m2/
+/.codex/
+
+# Local credentials and Maven authentication
+.env
+.env.*
+!.env.example
+settings.xml
+settings-security.xml
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# Server runtime data must not be committed
+/server/
+/plugins/
+/world*/
+/logs/
+/cache/
+/libraries/
+/versions/
+/backups/
+/config/
+/eula.txt
+/server.properties
+/bukkit.yml
+/spigot.yml
+/paper.yml
+/ops.json
+/whitelist.json
+/banned-*.json
+/usercache.json
+/conf.json
+/gates.json
+/servers.json
+*.log
+*.log.gz
+*.sqlite
+*.sqlite3
+*.db
+*.db-*

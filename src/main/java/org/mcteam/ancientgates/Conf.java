@@ -56,9 +56,9 @@ public class Conf {
 	public static String socketCommsPass = "";
 	public static int socketCommsTimeout = 10000;
 
-	// Enable auto-update
-	public static boolean updateCheck = true;
-	public static boolean autoUpdate = true;
+	// Retained for config compatibility; upstream downloads are disabled in this build.
+	public static boolean updateCheck = false;
+	public static boolean autoUpdate = false;
 
 	// Enable debug msgs
 	public static boolean debug = false;

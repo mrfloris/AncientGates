@@ -1,46 +1,16 @@
 package org.mcteam.ancientgates.util;
 
-import java.util.Map;
-import java.util.Map.Entry;
-
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 
 public class ItemStackUtil {
 
+	private static final String PAPER_FORMAT = "AG2:";
+
 	public static String itemStackToString(final ItemStack[] itemStack) {
-		String serialization = itemStack.length + ";";
-		for (int i = 0; i < itemStack.length; i++) {
-			final ItemStack is = itemStack[i];
-			if (is != null) {
-				String serializedItemStack = new String();
-
-				final String isType = is.getType().name();
-				serializedItemStack += "t@" + isType;
-
-				if (is.getDurability() != 0) {
-					final String isDurability = String.valueOf(is.getDurability());
-					serializedItemStack += ":d@" + isDurability;
-				}
-
-				if (is.getAmount() != 1) {
-					final String isAmount = String.valueOf(is.getAmount());
-					serializedItemStack += ":a@" + isAmount;
-				}
-
-				final Map<Enchantment, Integer> isEnch = is.getEnchantments();
-				if (isEnch.size() > 0) {
-					for (final Entry<Enchantment, Integer> ench : isEnch.entrySet()) {
-						serializedItemStack += ":e@" + ench.getKey().getName() + "@" + ench.getValue();
-					}
-				}
-
-				serialization += i + "#" + serializedItemStack + ";";
-			}
-		}
-		return serialization;
-
+		// Paper's versioned NBT retains data components, PDC and nested containers.
+		return PAPER_FORMAT + java.util.Base64.getEncoder().encodeToString(ItemStack.serializeItemsAsBytes(itemStack));
 	}
 
 	public static String itemStackToString(final ItemStack itemStack) {
@@ -48,6 +18,10 @@ public class ItemStackUtil {
 	}
 
 	public static ItemStack[] stringToItemStack(final String itemStackString) {
+		if (itemStackString.startsWith(PAPER_FORMAT)) {
+			return ItemStack.deserializeItemsFromBytes(java.util.Base64.getDecoder().decode(itemStackString.substring(PAPER_FORMAT.length())));
+		}
+		// Read existing pre-Paper messages without shifting items into different slots.
 		final String[] serializedBlocks = itemStackString.split(";");
 		final String isInfo = serializedBlocks[0];
 		final ItemStack[] deserializedItemStack = new ItemStack[Integer.valueOf(isInfo)];
@@ -56,7 +30,7 @@ public class ItemStackUtil {
 			final String[] serializedBlock = serializedBlocks[i].split("#");
 			final int stackPosition = Integer.valueOf(serializedBlock[0]);
 
-			if (stackPosition >= deserializedItemStack.length) {
+			if (stackPosition < 0 || stackPosition >= deserializedItemStack.length) {
 				continue;
 			}
 
@@ -77,7 +51,7 @@ public class ItemStackUtil {
 					is.addEnchantment(Enchantment.getByName(itemAttribute[1]), Integer.valueOf(itemAttribute[2]));
 				}
 			}
-			deserializedItemStack[i - 1] = new ItemStack(is);
+			deserializedItemStack[stackPosition] = new ItemStack(is);
 		}
 		return deserializedItemStack;
 

@@ -1,6 +1,7 @@
 package org.mcteam.ancientgates.listeners;
 
 import java.util.Calendar;
+import java.util.List;
 
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -129,7 +130,9 @@ public class PluginMovementListener implements Listener {
 			return;
 
 		final Vehicle vehicle = event.getVehicle();
-		final Entity passenger = vehicle.getPassenger();
+		final List<Entity> passengers = vehicle.getPassengers();
+		final List<Player> players = passengers.stream().filter(Player.class::isInstance).map(Player.class::cast).toList();
+		final Entity passenger = !players.isEmpty() ? players.getFirst() : passengers.isEmpty() ? null : passengers.getFirst();
 
 		// Ok so a vehicle drives into a portal block
 		// Find the nearest gate!
@@ -137,6 +140,23 @@ public class PluginMovementListener implements Listener {
 		final Gate nearestGate = Gates.gateFromAll(toCoord);
 
 		if (nearestGate != null) {
+			// Paper now retains every passenger. Check each rider before moving the
+			// vehicle, and refuse transfers the old one-rider protocol cannot represent.
+			if (passengers.size() > 1 && nearestGate.getBungeeTo() != null)
+				return;
+			if (!nearestGate.getTeleportEntities() && passengers.stream().anyMatch(entity -> !(entity instanceof Player)))
+				return;
+			if (players.size() > 1 && Conf.useEconomy && nearestGate.getCost() != 0) {
+				// The legacy economy flow cannot atomically charge/refund multiple riders.
+				return;
+			}
+			for (final Player rider : players) {
+				if (Conf.enforceAccess && !Plugin.hasPermManage(rider, "ancientgates.use." + nearestGate.getId())
+						&& !Plugin.hasPermManage(rider, "ancientgates.use.*"))
+					return;
+				if (Plugin.lastTeleportTime.getOrDefault(rider.getName(), 0L) > System.currentTimeMillis() - Conf.getGateCooldownMillis())
+					return;
+			}
 			Long now = 0L;
 
 			if (passenger instanceof Player) {
@@ -203,9 +223,8 @@ public class PluginMovementListener implements Listener {
 						((Player) passenger).sendMessage(nearestGate.getMessage());
 					}
 
-					if (passenger instanceof Player) {
-						Plugin.lastMessageTime.put(((Player) passenger).getName(), now);
-					}
+					for (final Player rider : players)
+						Plugin.lastTeleportTime.put(rider.getName(), now);
 				} else if (nearestGate.getBungeeTo() != null) {
 					TeleportUtil.teleportVehicle(vehicle, nearestGate.getBungeeTo(), nearestGate.getBungeeType(), nearestGate.getTeleportEntities(),
 							nearestGate.getTeleportInventory(), from.getBlockY() == to.getBlockY(), nearestGate.getCommand(),
