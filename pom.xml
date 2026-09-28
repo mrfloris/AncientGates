@@ -35,7 +35,7 @@
 		<project.build.sourceEncoding>${projectEncoding}</project.build.sourceEncoding>
 		<project.build.outputEncoding>${projectEncoding}</project.build.outputEncoding>
 		<maven.compiler.release>25</maven.compiler.release>
-		<paper.version>26.3.build.49-alpha</paper.version>
+		<paper.version>26.3-pre-2.build.0-alpha</paper.version>
 	</properties>
 
 	<build>
