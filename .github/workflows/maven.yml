@@ -12,7 +12,11 @@ permissions:
 jobs:
   build:
 
+    name: Build against Paper ${{ matrix.paper }}
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        paper: ["26.2.build.129-stable", "26.3.build.134-beta"]
 
     steps:
     - uses: actions/checkout@v4
@@ -23,4 +27,4 @@ jobs:
         distribution: 'temurin'
         cache: maven
     - name: Build with Maven
-      run: mvn -B -ntp clean verify --file pom.xml
+      run: mvn -B -ntp -Dpaper.version=${{ matrix.paper }} clean verify --file pom.xml

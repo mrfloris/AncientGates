@@ -4,7 +4,7 @@ description: '${project.description}'
 main: 'org.mcteam.ancientgates.Plugin'
 load: postworld
 author: 'ChanceSD'
-api-version: '26.3'
+api-version: '26.2'
 website: https://www.spigotmc.org/resources/ancient-gates.6583/
 softdepend:
     - Vault

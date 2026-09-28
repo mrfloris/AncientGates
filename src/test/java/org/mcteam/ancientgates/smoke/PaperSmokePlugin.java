@@ -75,7 +75,7 @@ public final class PaperSmokePlugin extends JavaPlugin {
         for (int z = 1; z <= 4; z++) world.getChunkAt(0, z).load();
         runCase("plugin descriptor", () -> {
             check(Plugin.instance.isEnabled(), "AncientGates enabled");
-            check("26.3".equals(Plugin.instance.getDescription().getAPIVersion()), "Paper API floor");
+            check("26.2".equals(Plugin.instance.getDescription().getAPIVersion()), "Paper 26.2 minimum API");
             check(Runtime.version().feature() == 25, "test runtime is Java 25");
         });
         runCase("restart persistence", () -> {
